@@ -15,6 +15,7 @@ export const collections = [
   "themes",
   "agentRuns",
   "models",
+  "setup",
 ] as const;
 export class BrowserStore implements Store {
   private db: Promise<IDBPDatabase>;

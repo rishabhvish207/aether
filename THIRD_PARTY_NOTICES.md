@@ -5,3 +5,5 @@ Direct dependencies: Next.js (MIT), React/React DOM (MIT), Tailwind CSS (MIT), L
 This initial list is not the completed transitive notice bundle or legal review. Preserve dependency license files and generate/review full notices before packaging. package-lock.json and Cargo.lock pin the dependency inventory. No model weights or speech engines are bundled. whisper.cpp is MIT; downloaded Whisper models have their own model license. System speech voices are provided under the operating system/engine terms. Review Piper/Kokoro/sherpa-onnx engine and voice-model licenses separately before any distribution; no such engine is selected for bundling.
 
 Aether's own license has not been selected by the maintainer. Do not infer one from dependency licenses.
+
+Setup-core additions: sysinfo (MIT), tar-rs (MIT OR Apache-2.0), zstd-rs (MIT), libc (MIT OR Apache-2.0), tokio-util (MIT), tempfile test tooling (MIT OR Apache-2.0). zstd-sys includes upstream Zstandard (BSD/GPL dual terms; preserve upstream bundled notices and choose compatible distribution terms during the release license audit). No runtime or model binary is committed or bundled by this checkpoint.

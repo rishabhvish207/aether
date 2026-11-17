@@ -26,11 +26,13 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { initializeStore } from "@/core/bootstrap";
+import { StorageSettings } from "./storage-settings";
+import { SetupWizard } from "./setup-wizard";
+import type { SetupRecord } from "@/core/setup";
 import { Markdown } from "./markdown";
 import {
   brand,
   defaults,
-  localProvider,
   uid,
   textOf,
   endpointScope,
@@ -78,6 +80,7 @@ export function Workspace() {
   const [history, setHistory] = useState<Conversation[]>([]);
   const [active, setActive] = useState<Conversation>();
   const [view, setView] = useState("Chat");
+  const [setupOpen, setSetupOpen] = useState(false);
   const [providerId, setProviderId] = useState("local-ollama");
   const [model, setModel] = useState("");
   const [profileId, setProfileId] = useState("");
@@ -115,10 +118,16 @@ export function Workspace() {
       const fs = await s.list<Profile>("profiles");
       const hs = await s.list<Conversation>("conversations");
       setProfiles(fs);
-      setProfileId(fs[0]?.id ?? "");
+      setProfileId(fs.find((p) => p.name === "General Assistant")?.id ?? "");
       setSettings(config ?? defaults());
       setProviders(ps);
-      setProviderId(ps.find((p) => p.enabled)?.id ?? "");
+      const setup = await s.get<SetupRecord>("setup", "current");
+      setProviderId(
+        ps.find((p) => p.id === setup?.providerId && p.enabled)?.id ??
+          ps.find((p) => p.enabled)?.id ??
+          "",
+      );
+      if (setup?.model) setModel(setup.model);
       setHistory(hs);
       setStore(s);
     })().catch((e) => setError(String(e)));
@@ -231,7 +240,8 @@ export function Workspace() {
     setView("Chat");
   };
   async function generate(base: Conversation, messages: Message[]) {
-    if (!provider || !model || busy) return;
+    if (!provider?.enabled || !models.some((m) => m.id === model) || busy)
+      return;
     if (
       (profile?.providerId && profile.providerId !== providerId) ||
       (profile?.model && profile.model !== model)
@@ -342,6 +352,13 @@ export function Workspace() {
     }
   }
   async function send() {
+    if (busy) return;
+    if (!provider?.enabled || !models.some((m) => m.id === model)) {
+      setError(
+        "Reconnect and select an available model. Your draft has been kept.",
+      );
+      return;
+    }
     if (!draft.trim() && !attachments.length) return;
     const base = active ?? {
       id: uid(),
@@ -409,6 +426,28 @@ export function Workspace() {
       <div className="content" role="status">
         Opening local workspace…{error && <p role="alert">{error}</p>}
       </div>
+    );
+  if (!settings.onboarded || setupOpen)
+    return (
+      <main className="setup-page">
+        <SetupWizard
+          store={store}
+          providers={providers}
+          onClose={settings.onboarded ? () => setSetupOpen(false) : undefined}
+          onDone={async ({ record, provider }) => {
+            setProviders(await store.list<Provider>("providers"));
+            setSettings(
+              (await store.get<Settings>("settings", "app")) ?? defaults(),
+            );
+            if (provider) {
+              setProviderId(provider.id);
+              setModel(record.model ?? "");
+            }
+            setSetupOpen(false);
+            setView("Chat");
+          }}
+        />
+      </main>
     );
   return (
     <div className="app">
@@ -484,32 +523,6 @@ export function Workspace() {
               <button onClick={() => setError("")}>Dismiss</button>
             </div>
           )}
-          {!settings.onboarded && (
-            <section className="card stack">
-              <span className="eyebrow">Welcome to {brand.name}</span>
-              <h1>A workspace on your terms.</h1>
-              <p>
-                History and configuration stay on this device. Inference runs at
-                your selected provider endpoint. Remote providers receive your
-                messages and attachments. Model downloads and web tools use the
-                network only when you request them.
-              </p>
-              <div className="notice">
-                Default connection: {localProvider.baseUrl}. Start your existing
-                Ollama server if it is unavailable. Browser connections may
-                require an explicit Ollama origin allowance; do not expose the
-                server publicly.
-              </div>
-              <button
-                className="primary"
-                onClick={() =>
-                  void saveSettings({ ...settings, onboarded: true })
-                }
-              >
-                Open workspace
-              </button>
-            </section>
-          )}
           {view === "Chat" && (
             <>
               <div className="toolbar">
@@ -564,6 +577,9 @@ export function Workspace() {
                   <button disabled={busy} onClick={() => void refresh()}>
                     <RefreshCw />
                     Reconnect
+                  </button>
+                  <button disabled={busy} onClick={() => setSetupOpen(true)}>
+                    Review setup
                   </button>
                   <button disabled={busy} onClick={() => newChat(true)}>
                     Temporary chat
@@ -880,7 +896,7 @@ export function Workspace() {
                       <button
                         className="primary"
                         disabled={
-                          !model ||
+                          !models.some((m) => m.id === model) ||
                           !provider?.enabled ||
                           (!draft.trim() && !attachments.length)
                         }
@@ -937,7 +953,13 @@ export function Workspace() {
             />
           )}
           {view === "Settings" && (
-            <SettingsPanel settings={settings} save={saveSettings} />
+            <>
+              <button disabled={busy} onClick={() => setSetupOpen(true)}>
+                Setup &amp; storage
+              </button>
+              <StorageSettings settings={settings} save={saveSettings} />
+              <SettingsPanel settings={settings} save={saveSettings} />
+            </>
           )}
           {view === "Agents" && (
             <AgentPanel store={store} provider={provider} model={model} />
@@ -963,6 +985,7 @@ export function Workspace() {
           )}
           {view === "Models" && (
             <ModelsPanel
+              downloadDirectory={settings.modelDirectory}
               provider={provider}
               models={models}
               refresh={refresh}

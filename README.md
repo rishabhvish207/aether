@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. Default provider is Ollama at http://127.0.0.1:11434. No models, server processes or services are installed or changed automatically. Configure additional providers in Providers. Compatible API base URLs should include `/v1`. Browser requests require the inference server to permit this origin. Do not expose an unauthenticated Ollama service to the internet.
+Open http://127.0.0.1:3000. Default provider is Ollama at http://127.0.0.1:11434. The setup wizard discovers existing services without changing them. The native Linux setup path can download a verified portable runtime and start an isolated child only after explicit consent. No system services or model stores are changed automatically. Configure additional providers in Providers. Compatible API base URLs should include `/v1`. Browser requests require the inference server to permit this origin. Do not expose an unauthenticated Ollama service to the internet.
 
 ```sh
 npm run lint
@@ -44,6 +44,8 @@ Source is on NTFS. Node install, build and browser tests are checked here. Rust'
 
 Streaming text chat; separate supplied thinking; cancellation; local history/search/folders/pinning/branching/edit/regenerate; temporary chats; safe Markdown and code highlighting; profile CRUD/portable imports; provider CRUD and diagnostics; model inventory/metadata/pull/removal through supported APIs; real-metric benchmarks; appearance and inference settings; checksummed selective JSON backup/restore; opt-in research source collections; whisper.cpp transcription, installed local-system voice playback, public Hugging Face discovery and approval-controlled browser workspace agents. Engine-dependent paths require external setup and some remain unverified.
 
-Native source includes SQLite migrations, explicit file/folder dialogs, GGUF header inspection and streamed HTTPS download with SHA-256 checks. These are **unverified**, not a shipping native implementation. Download resume, gated Hugging Face auth, full GGUF import/registration, native agent execution/rollback, PDF/camera, keychain, full settings, scheduled backup and Android remain incomplete.
+Native source includes SQLite migrations, file/folder dialogs, an ownership-aware runtime/storage setup core, original-preserving GGUF upload/create and streamed HTTPS downloads. The standalone runtime core is compiled/tested independently, including real isolated child startup; the Tauri binding remains unverified. These are **unverified**, not a shipping native implementation. Raw file/archive resume, gated Hugging Face auth, full import repair/cancellation, native agent execution/rollback, PDF/camera, keychain, full settings, scheduled backup and Android remain incomplete.
 
 Keys remain session-only. Backups are unencrypted; conversation attachments currently live inside message records. Temporary chats and their attachments live only in memory until you leave/reload. No telemetry. Model and voice-engine licenses are separate. Application license selection is pending; no open-source release license is asserted.
+
+Setup details and exact test limitations: [adaptive setup/runtime/storage](docs/SETUP_RUNTIME_STORAGE.md). An empty existing Ollama library is a valid connection; Aether never assumes it owns that service or its residual files. A chosen download folder does not relocate the server's weights. Full official runtime archive installation and packaged desktop setup have not been tested here.

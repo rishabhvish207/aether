@@ -2,9 +2,9 @@
 
 ## Local chat
 
-Start/manage your existing Ollama service yourself. Aether never reinstalls Ollama, changes its model directory, starts a competing server or alters model blobs. Use Providers to test the endpoint. Browser preview requires allowed origins; limit allowances to the explicit development origin, and do not bind unauthenticated runtimes publicly. LM Studio/llama.cpp/OpenAI-compatible endpoints use their `/v1` base URLs. Keys remain session-only, not persisted.
+Existing Ollama services remain user-managed and unchanged by setup. Native setup can explicitly create a separate owned library and child process, reusing an existing executable or installing a verified portable release with consent. See SETUP_RUNTIME_STORAGE.md for boundaries and verification. Aether never changes an external model directory or edits model blobs. Use Providers to test the endpoint. Browser preview requires allowed origins; limit allowances to the explicit development origin, and do not bind unauthenticated runtimes publicly. LM Studio/llama.cpp/OpenAI-compatible endpoints use their `/v1` base URLs. Keys remain session-only, not persisted.
 
-Provider protocol references checked 2026-11-17: [Ollama chat](https://docs.ollama.com/api/chat), [Ollama create](https://docs.ollama.com/api/create). The create/import operation is not yet implemented despite the reference being reviewed. Native static packaging follows [Tauri's Next.js guide](https://v2.tauri.app/start/frontend/nextjs/) and [SQL plugin](https://v2.tauri.app/plugin/sql/).
+Provider protocol references checked 2026-11-17: [Ollama chat](https://docs.ollama.com/api/chat), [Ollama create](https://docs.ollama.com/api/create). Native local create/import is now implemented in the standalone runtime core and tested with an isolated HTTP fixture; packaged/live model import remains unverified. Native static packaging follows [Tauri's Next.js guide](https://v2.tauri.app/start/frontend/nextjs/) and [SQL plugin](https://v2.tauri.app/plugin/sql/).
 
 ## Voice
 

@@ -23,6 +23,7 @@ export const providerSchema = z.object({
       (v) => /^https?:/.test(v) && !new URL(v).username && !new URL(v).password,
       "Use HTTP(S) without embedded credentials",
     ),
+  runtimeOwnership: z.enum(["external", "aether", "remote"]).optional(),
   enabled: z.boolean(),
   timeout: z.number().min(1000).max(600000),
 });

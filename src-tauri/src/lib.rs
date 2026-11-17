@@ -1,3 +1,4 @@
+mod setup;
 use futures_util::StreamExt;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -53,6 +54,29 @@ async fn choose_model_directory(
         path: path.to_string_lossy().into(),
         free_bytes: free,
     }))
+}
+#[tauri::command]
+fn use_download_directory(
+    path: String,
+    state: State<'_, NativeState>,
+) -> Result<Directory, String> {
+    let path = PathBuf::from(path)
+        .canonicalize()
+        .map_err(|e| e.to_string())?;
+    let repo = if cfg!(debug_assertions) {
+        Path::new(env!("CARGO_MANIFEST_DIR")).parent()
+    } else {
+        None
+    };
+    let report = aether_runtime_core::storage::inspect(&path, None, repo)?;
+    if !report.writable {
+        return Err("Download directory is not writable".into());
+    }
+    *state.root.lock().map_err(|e| e.to_string())? = Some(path.clone());
+    Ok(Directory {
+        path: path.to_string_lossy().into_owned(),
+        free_bytes: report.free_bytes,
+    })
 }
 fn safe_destination(root: &Path, name: &str) -> Result<PathBuf, String> {
     if name.is_empty()
@@ -173,7 +197,7 @@ async fn inspect_gguf(app: tauri::AppHandle) -> Result<Option<serde_json::Value>
 }
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default().manage(NativeState::default()).plugin(tauri_plugin_dialog::init()).plugin(tauri_plugin_sql::Builder::default().add_migrations("sqlite:aether.db",vec![tauri_plugin_sql::Migration{version:1,description:"structured_records",sql:"CREATE TABLE IF NOT EXISTS records (collection TEXT NOT NULL, id TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(collection,id));",kind:tauri_plugin_sql::MigrationKind::Up}]).build()).invoke_handler(tauri::generate_handler![choose_model_directory,download_model,cancel_download,inspect_gguf]).run(tauri::generate_context!()).expect("Unable to start native application");
+    tauri::Builder::default().manage(setup::SetupState::default()).manage(setup::ImportState::default()).manage(NativeState::default()).plugin(tauri_plugin_dialog::init()).plugin(tauri_plugin_sql::Builder::default().add_migrations("sqlite:aether.db",vec![tauri_plugin_sql::Migration{version:1,description:"structured_records",sql:"CREATE TABLE IF NOT EXISTS records (collection TEXT NOT NULL, id TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(collection,id));",kind:tauri_plugin_sql::MigrationKind::Up}]).build()).invoke_handler(tauri::generate_handler![use_download_directory,choose_model_directory,download_model,cancel_download,inspect_gguf,setup::confirm_setup_action,setup::storage_usage,setup::starter_models,setup::select_import_file,setup::register_import_file,setup::setup_environment,setup::inspect_storage,setup::pick_storage_location,setup::prepare_storage,setup::runtime_release,setup::install_runtime,setup::cancel_runtime_install,setup::start_managed_runtime,setup::stop_managed_runtime]).run(tauri::generate_context!()).expect("Unable to start native application");
 }
 #[cfg(test)]
 mod tests {

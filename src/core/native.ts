@@ -12,6 +12,10 @@ export const native = {
     invoke<{ path: string; freeBytes: number } | null>(
       "choose_model_directory",
     ),
+  useDirectory: (path: string) =>
+    invoke<{ path: string; freeBytes: number }>("use_download_directory", {
+      path,
+    }),
   inspectGGUF: () =>
     invoke<{
       path: string;

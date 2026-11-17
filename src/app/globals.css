@@ -450,3 +450,53 @@ summary {
     min-height: 55dvh;
   }
 }
+.setup-page {
+  min-height: 100dvh;
+  padding: 32px 20px;
+  background: radial-gradient(ellipse at top, var(--panel), var(--bg) 65%);
+}
+.setup-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.setup-choice {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+  text-align: left;
+  white-space: normal;
+  min-height: 190px;
+}
+.setup-choice span {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.setup-shell .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.setup-shell code {
+  overflow-wrap: anywhere;
+}
+.setup-shell dd {
+  margin: 6px 0;
+}
+@media (max-width: 760px) {
+  .setup-page {
+    padding: 12px;
+  }
+  .setup-shell {
+    padding: 20px;
+  }
+  .setup-choice {
+    min-height: 140px;
+  }
+}

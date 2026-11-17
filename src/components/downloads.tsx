@@ -4,7 +4,11 @@ import { listen } from "@tauri-apps/api/event";
 import { native, isNative, type DownloadProgress } from "@/core/native";
 import { uid } from "@/core/domain";
 import { HuggingFaceSearch } from "./huggingface";
-export function Downloads() {
+export function Downloads({
+  preferredDirectory,
+}: {
+  preferredDirectory?: string;
+}) {
   const [directory, setDirectory] = useState<{
     path: string;
     freeBytes: number;
@@ -50,6 +54,21 @@ export function Downloads() {
       ) : (
         <>
           <div className="row">
+            {preferredDirectory && (
+              <button
+                disabled={!!job}
+                onClick={async () => {
+                  try {
+                    setDirectory(await native.useDirectory(preferredDirectory));
+                  } catch (e) {
+                    setMessage(String(e));
+                  }
+                }}
+              >
+                Use preferred downloads folder
+              </button>
+            )}
+
             <button
               disabled={!!job}
               onClick={async () => {

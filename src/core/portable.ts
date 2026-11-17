@@ -1,3 +1,4 @@
+import { setupSchema } from "./setup";
 import { z } from "zod";
 import {
   profileSchema,
@@ -68,6 +69,18 @@ const backupSchema = z.object({
   checksums: z.record(z.string(), z.string()),
 });
 export type Backup = z.infer<typeof backupSchema>;
+// Stable key ordering prevents schema-normalization from invalidating otherwise identical records.
+function canonicalJSON(value: unknown): string {
+  return JSON.stringify(value, (_key, v) =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? Object.fromEntries(
+          Object.keys(v)
+            .sort()
+            .map((key) => [key, v[key]]),
+        )
+      : v,
+  );
+}
 async function sha(text: string) {
   return Array.from(
     new Uint8Array(
@@ -89,7 +102,7 @@ export async function makeBackup(
     sections[key] = (await store.list<{ id: string }>(key)).map((v) =>
       sanitizeRecord(key, v),
     );
-    checksums[key] = await sha(JSON.stringify(sections[key]));
+    checksums[key] = await sha(canonicalJSON(sections[key]));
   }
   return {
     schemaVersion: 1,
@@ -100,10 +113,16 @@ export async function makeBackup(
 }
 export async function validateBackup(input: unknown): Promise<Backup> {
   const b = backupSchema.parse(input);
+  const rawSections = z
+    .object({ sections: z.record(z.string(), z.unknown()) })
+    .parse(input).sections;
   for (const [key, values] of Object.entries(b.sections)) {
     if (!collections.includes(key as (typeof collections)[number]))
       throw new Error(`Unsupported section: ${key}`);
-    if ((await sha(JSON.stringify(values))) !== b.checksums[key])
+    if (
+      (await sha(canonicalJSON(values))) !== b.checksums[key] &&
+      (await sha(JSON.stringify(rawSections[key]))) !== b.checksums[key]
+    )
       throw new Error(`Checksum mismatch: ${key}`);
     const ids = new Set();
     for (const v of values) {
@@ -138,6 +157,8 @@ export function parseProfiles(input: unknown) {
 }
 
 function sanitizeRecord(section: string, input: unknown): { id: string } {
+  if (section === "setup")
+    return setupSchema.extend({ id: z.literal("current") }).parse(input);
   if (section === "profiles") return profileSchema.parse(input);
   if (section === "providers") return providerSchema.parse(input);
   if (section === "settings")

@@ -503,3 +503,7 @@ Technical references were checked when this specification was prepared. Re-check
 - Kokoro reference repository/license information: https://github.com/hexgrad/Kokoro-82M
 
 End of specification.
+
+Implementation refinement — 2026-11-17
+-------------------------------------
+The normative setup/runtime/storage supplement is docs/SETUP_RUNTIME_STORAGE.md. It extends FR-001–006, FR-040–052, FR-070–076 and FR-171 without replacing them: adaptive repeatable setup, existing/Aether/remote runtime ownership, consent-gated isolated local installation, OS-data defaults, real storage inspection, original-file preservation and isolated non-destructive testing. A configured client download directory never relocates an external Ollama library. Existing user-managed services remain unchanged unless the user explicitly approves a disruptive operation; no such operation is implemented by setup. Read the supplement for current verified behavior and limits.

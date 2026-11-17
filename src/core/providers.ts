@@ -12,6 +12,13 @@ export function setSessionSecret(id: string, value: string) {
   if (value) secrets.set(id, value);
   else secrets.delete(id);
 }
+export function transferSessionSecret(from: string, to: string) {
+  const key = secrets.get(from);
+  if (key && from !== to) {
+    secrets.set(to, key);
+    secrets.delete(from);
+  }
+}
 export type Delta = { text?: string; thinking?: string; metrics?: Metrics };
 export class ProviderError extends Error {
   constructor(

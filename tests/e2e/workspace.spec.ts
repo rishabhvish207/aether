@@ -30,11 +30,22 @@ test.beforeEach(async ({ page }) => {
     return route.fulfill({ json: {} });
   });
   await page.goto("/");
+  await page.getByRole("button", { name: /Use an existing setup/ }).click();
+  await page
+    .getByRole("button", { name: "Use this connection", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Continue with this connection", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Open workspace", exact: true })
     .click();
+  await expect(
+    page.getByRole("button", { name: "Review setup", exact: true }),
+  ).toBeVisible();
 });
 async function navigate(page: import("@playwright/test").Page, name: string) {
+  await expect(page.locator("header strong")).toBeVisible();
   const toggle = page.getByRole("button", { name: "Toggle navigation" });
   if (await toggle.isVisible()) await toggle.click();
   await page
@@ -48,6 +59,11 @@ test("streams, persists history, and keeps temporary conversations out of Indexe
   await expect(
     page.getByRole("combobox", { name: "Model", exact: true }),
   ).toHaveValue("test-model");
+  await expect(
+    page
+      .getByRole("combobox", { name: "AI Profile", exact: true })
+      .locator("option:checked"),
+  ).toHaveText("General Assistant");
   await page
     .getByRole("textbox", { name: "Message", exact: true })
     .fill("Persistent question");
@@ -213,6 +229,18 @@ test("ignores stale inventory when switching providers during a connection reque
   const started = page.waitForRequest("http://127.0.0.1:11434/api/tags");
   await page.getByRole("button", { name: "Reconnect", exact: true }).click();
   await started;
+  await page
+    .getByRole("textbox", { name: "Message", exact: true })
+    .fill("Keep this draft during reconnect");
+  await page
+    .getByRole("textbox", { name: "Message", exact: true })
+    .press("Enter");
+  await expect(
+    page.getByRole("textbox", { name: "Message", exact: true }),
+  ).toHaveValue("Keep this draft during reconnect");
+  await expect(
+    page.getByRole("button", { name: "Send", exact: true }),
+  ).toBeDisabled();
   await navigate(page, "Providers");
   await page.getByRole("button", { name: "Add connection" }).click();
   await page

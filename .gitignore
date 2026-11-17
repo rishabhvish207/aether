@@ -46,3 +46,5 @@ secrets.json
 /models/
 /downloads/
 *.log
+# Standalone native-core test artifacts
+**/target/

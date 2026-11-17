@@ -27,6 +27,7 @@ import {
   restoreBackup,
   type Backup,
 } from "@/core/portable";
+import { ModelImport } from "./model-import";
 import { Downloads } from "./downloads";
 type Report = { report: (error: string) => void };
 export function ProviderPanel({
@@ -998,11 +999,13 @@ export function BenchmarkPanel({
 }
 export function ModelsPanel({
   provider,
+  downloadDirectory,
   models,
   refresh,
   report,
 }: {
   provider?: Provider;
+  downloadDirectory?: string;
   models: Model[];
   refresh: () => Promise<void>;
 } & Report) {
@@ -1093,7 +1096,8 @@ export function ModelsPanel({
           </button>
         </section>
       )}
-      <Downloads />
+      <ModelImport provider={provider} refresh={refresh} />
+      <Downloads preferredDirectory={downloadDirectory} />
       {models.length === 0 && (
         <div className="notice">
           No models returned. Test the selected provider in Providers, then
