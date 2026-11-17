@@ -1,14 +1,14 @@
 # Aether implementation tracker
 
-Updated 2026-11-17. Codex started from a document-only repository on branch `main` with no configured remote. The complete SRS remains the target. **Not complete.** No requirement is declared fully verified solely because its screen exists.
+Updated 2026-11-17. Codex started from a document-only repository on branch `main` with no configured remote; SSH origin is now configured and verified at github.com/rishabhvish207/aether. The complete SRS remains the target. **Not complete.** No requirement is declared fully verified solely because its screen exists.
 
 Status vocabulary: missing; partial; implemented-unverified; verified; blocked. Tests exercise only their stated paths; live endpoint and native checks remain distinct. Paths below are relative to `src/` unless prefixed `tests/`, `docs/`, or `src-tauri/`.
 
 ## Verification evidence
 
-- `npm run lint`, `npm run typecheck`, `npm test`: passing at checkpoint (20 core/agent tests).
+- `npm run lint`, `npm run typecheck`, `npm test`: passing at checkpoint (28 core/agent/provider tests).
 - `npm run build`: static export passed using Next.js 16.4.6/React 19.3.1/TypeScript 6.0.3/Tailwind 4.3.5. Sandbox child-process restriction requires approved build.
-- Browser integration tests: 6 passed across desktop/mobile, covering chat/history/temporary exclusion, profile persistence/navigation/themes and safe Markdown. Browser transport receiver defect was found and fixed. Final mobile-layout correction rebuilt successfully and all 6 browser cases passed again; updated screenshot inspected.
+- Browser integration tests: 8 passed across desktop/mobile, covering chat/history/temporary exclusion, profile persistence/navigation/themes and safe Markdown. Browser transport receiver defect was found and fixed. Final mobile-layout correction rebuilt successfully and all 6 browser cases passed again; updated screenshot inspected. New provider-switch race case also passes at both widths.
 - `cargo check --manifest-path src-tauri/Cargo.toml`: blocked before application compilation by missing WebKitGTK/JavaScriptCoreGTK 4.1. Rust formatting passed. Native code not certified compiled.
 - No live Ollama response: initial loopback probe refused connection. No model mutations or system service changes made.
 - npm install audit reported zero vulnerabilities. This is not a completed dependency/license/security audit.
@@ -36,7 +36,7 @@ Status vocabulary: missing; partial; implemented-unverified; verified; blocked. 
 | FR-011 | partial | components/workspace.tsx; core/providers.ts; core/storage.ts; core/portable.ts; tests/core.test.ts; tests/e2e/workspace.spec.ts | Live provider smoke; improve interruption recovery, race handling, branch view, export options and scroll behavior. |
 | FR-012 | partial | components/workspace.tsx; core/providers.ts; core/storage.ts; core/portable.ts; tests/core.test.ts; tests/e2e/workspace.spec.ts | Live provider smoke; improve interruption recovery, race handling, branch view, export options and scroll behavior. |
 | FR-013 | partial | components/workspace.tsx; core/providers.ts; core/storage.ts; core/portable.ts; tests/core.test.ts; tests/e2e/workspace.spec.ts | Live provider smoke; improve interruption recovery, race handling, branch view, export options and scroll behavior. |
-| FR-014 | partial | components/workspace.tsx; core/providers.ts; core/storage.ts; core/portable.ts; tests/core.test.ts; tests/e2e/workspace.spec.ts | Live provider smoke; improve interruption recovery, race handling, branch view, export options and scroll behavior. |
+| FR-014 | partial | components/workspace.tsx; core/providers.ts; core/storage.ts; core/portable.ts; tests/core.test.ts; tests/e2e/workspace.spec.ts  Provider eventData/schema validation; tests/providers.test.ts; provider-switch browser test. | Live provider smoke; improve interruption recovery, race handling, branch view, export options and scroll behavior. |
 | FR-015 | partial | components/workspace.tsx; core/providers.ts; core/storage.ts; core/portable.ts; tests/core.test.ts; tests/e2e/workspace.spec.ts | Live provider smoke; improve interruption recovery, race handling, branch view, export options and scroll behavior. |
 | FR-016 | partial | components/workspace.tsx; core/providers.ts; core/storage.ts; core/portable.ts; tests/core.test.ts; tests/e2e/workspace.spec.ts | Live provider smoke; improve interruption recovery, race handling, branch view, export options and scroll behavior. |
 | FR-017 | partial | components/workspace.tsx; core/providers.ts; core/storage.ts; core/portable.ts; tests/core.test.ts; tests/e2e/workspace.spec.ts | Live provider smoke; improve interruption recovery, race handling, branch view, export options and scroll behavior. |
@@ -52,7 +52,7 @@ Status vocabulary: missing; partial; implemented-unverified; verified; blocked. 
 | FR-034 | partial | core/domain.ts profileSchema/starters; components/panels.tsx ProfilePanel; core/portable.ts parseProfiles; tests/core.test.ts; browser profile tests | Capability and missing-binding coverage; complete tools/voice preference schema and UI. |
 | FR-035 | partial | core/domain.ts profileSchema/starters; components/panels.tsx ProfilePanel; core/portable.ts parseProfiles; tests/core.test.ts; browser profile tests | Capability and missing-binding coverage; complete tools/voice preference schema and UI. |
 | FR-036 | partial | core/domain.ts profileSchema/starters; components/panels.tsx ProfilePanel; core/portable.ts parseProfiles; tests/core.test.ts; browser profile tests | Capability and missing-binding coverage; complete tools/voice preference schema and UI. |
-| FR-040 | partial | components/panels.tsx ModelsPanel; components/downloads.tsx; core/native.ts; src-tauri/src/lib.rs | Compile/test native boundary; implement full GGUF registration, HF discovery/auth, resumable jobs and persistence. |
+| FR-040 | partial | components/panels.tsx ModelsPanel; components/downloads.tsx; core/native.ts; src-tauri/src/lib.rs  Provider eventData/schema validation; tests/providers.test.ts; provider-switch browser test. | Compile/test native boundary; implement full GGUF registration, HF discovery/auth, resumable jobs and persistence. |
 | FR-041 | partial | components/panels.tsx ModelsPanel; components/downloads.tsx; core/native.ts; src-tauri/src/lib.rs | Compile/test native boundary; implement full GGUF registration, HF discovery/auth, resumable jobs and persistence. |
 | FR-042 | partial | components/panels.tsx ModelsPanel; components/downloads.tsx; core/native.ts; src-tauri/src/lib.rs | Compile/test native boundary; implement full GGUF registration, HF discovery/auth, resumable jobs and persistence. |
 | FR-043 | partial | core/huggingface.ts; components/huggingface.tsx; components/downloads.tsx; tests/core.test.ts | Public discovery and pinned direct files implemented; gated/private auth, paginated discovery and live verification remain. |
@@ -71,11 +71,11 @@ Status vocabulary: missing; partial; implemented-unverified; verified; blocked. 
 | FR-063 | partial | core/domain.ts optionsSchema; panels.tsx OptionsEditor; core/providers.ts chat | Model-specific controls, configuration precedence/overrides, Modelfile preview/apply and measured pressure guidance. |
 | FR-064 | partial | core/domain.ts optionsSchema; panels.tsx OptionsEditor; core/providers.ts chat | Model-specific controls, configuration precedence/overrides, Modelfile preview/apply and measured pressure guidance. |
 | FR-065 | missing | — | Model-specific controls, configuration precedence/overrides, Modelfile preview/apply and measured pressure guidance. |
-| FR-070 | partial | core/providers.ts ProviderClient; panels.tsx ProviderPanel; tests/core.test.ts | Live adapters, native keychain, custom headers, model create/import and comprehensive capability probing. |
-| FR-071 | partial | core/providers.ts ProviderClient; panels.tsx ProviderPanel; tests/core.test.ts | Live adapters, native keychain, custom headers, model create/import and comprehensive capability probing. |
+| FR-070 | partial | core/providers.ts ProviderClient; panels.tsx ProviderPanel; tests/core.test.ts  Provider eventData/schema validation; tests/providers.test.ts; provider-switch browser test. | Live adapters, native keychain, custom headers, model create/import and comprehensive capability probing. |
+| FR-071 | partial | core/providers.ts ProviderClient; panels.tsx ProviderPanel; tests/core.test.ts  Provider eventData/schema validation; tests/providers.test.ts; provider-switch browser test. | Live adapters, native keychain, custom headers, model create/import and comprehensive capability probing. |
 | FR-072 | partial | core/providers.ts ProviderClient; panels.tsx ProviderPanel; tests/core.test.ts | Live adapters, native keychain, custom headers, model create/import and comprehensive capability probing. |
 | FR-073 | partial | core/providers.ts ProviderClient; panels.tsx ProviderPanel; tests/core.test.ts | Live adapters, native keychain, custom headers, model create/import and comprehensive capability probing. |
-| FR-074 | partial | core/providers.ts ProviderClient; panels.tsx ProviderPanel; tests/core.test.ts | Live adapters, native keychain, custom headers, model create/import and comprehensive capability probing. |
+| FR-074 | partial | core/providers.ts ProviderClient; panels.tsx ProviderPanel; tests/core.test.ts  Provider eventData/schema validation; tests/providers.test.ts; provider-switch browser test. | Live adapters, native keychain, custom headers, model create/import and comprehensive capability probing. |
 | FR-075 | partial | core/providers.ts ProviderClient; panels.tsx ProviderPanel; tests/core.test.ts | Live adapters, native keychain, custom headers, model create/import and comprehensive capability probing. |
 | FR-076 | partial | core/providers.ts ProviderClient; panels.tsx ProviderPanel; tests/core.test.ts | Live adapters, native keychain, custom headers, model create/import and comprehensive capability probing. |
 | FR-080 | partial | core/domain.ts Part; core/attachments.ts; workspace.tsx composer | External blob storage, image previews, MIME sniffing, PDF/document extraction, camera capture and attachment tests. |
@@ -137,8 +137,8 @@ Status vocabulary: missing; partial; implemented-unverified; verified; blocked. 
 | FR-174 | missing | — | Native compile/package/launch after deliberate prerequisite setup. Android SDK/build/network/permissions absent. Updater disabled pending signing/trust/rollback. |
 | FR-175 | missing | — | Native compile/package/launch after deliberate prerequisite setup. Android SDK/build/network/permissions absent. Updater disabled pending signing/trust/rollback. |
 | NFR-001 | partial | src/core/*; src/components/*; README.md; docs/ARCHITECTURE.md; tests/core.test.ts | Complete native, security, accessibility, performance and portability validation; see project state. |
-| NFR-002 | partial | src/core/*; src/components/*; README.md; docs/ARCHITECTURE.md; tests/core.test.ts | Complete native, security, accessibility, performance and portability validation; see project state. |
-| NFR-003 | partial | src/core/*; src/components/*; README.md; docs/ARCHITECTURE.md; tests/core.test.ts | Complete native, security, accessibility, performance and portability validation; see project state. |
+| NFR-002 | partial | src/core/*; src/components/*; README.md; docs/ARCHITECTURE.md; tests/core.test.ts  Provider eventData/schema validation; tests/providers.test.ts; provider-switch browser test. | Complete native, security, accessibility, performance and portability validation; see project state. |
+| NFR-003 | partial | src/core/*; src/components/*; README.md; docs/ARCHITECTURE.md; tests/core.test.ts  Provider eventData/schema validation; tests/providers.test.ts; provider-switch browser test. | Complete native, security, accessibility, performance and portability validation; see project state. |
 | NFR-004 | partial | src/core/*; src/components/*; README.md; docs/ARCHITECTURE.md; tests/core.test.ts | Complete native, security, accessibility, performance and portability validation; see project state. |
 | NFR-005 | partial | src/core/*; src/components/*; README.md; docs/ARCHITECTURE.md; tests/core.test.ts | Complete native, security, accessibility, performance and portability validation; see project state. |
 | NFR-006 | partial | src/core/*; src/components/*; README.md; docs/ARCHITECTURE.md; tests/core.test.ts | Complete native, security, accessibility, performance and portability validation; see project state. |
@@ -154,3 +154,5 @@ Status vocabulary: missing; partial; implemented-unverified; verified; blocked. 
 ## Explicit exclusions/deferred gates
 
 Cloud synchronization, teams, public marketplace and an Aether-hosted backend are excluded by the SRS. Optional indexing/RAG and iOS are not implemented. Advanced realtime duplex voice follows push-to-talk verification. Auto-updates remain disabled until signing/integrity/rollback/trust work is validated. No full-product completion claim is made.
+
+Provider hardening checkpoint (2026-11-17): complete LF/CRLF multiline SSE framing, bounded event payloads, schema-validated inventories/capabilities/pull events, detection of truncated downloads, cancelled superseded inventories and selection-scoped capabilities are implemented. Verified by 28 unit tests, 8 browser cases, lint/typecheck/static build. Live providers and native packaging remain unverified; these requirement groups stay partial.

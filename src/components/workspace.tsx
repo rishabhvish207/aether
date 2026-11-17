@@ -82,7 +82,17 @@ export function Workspace() {
   const [model, setModel] = useState("");
   const [profileId, setProfileId] = useState("");
   const [models, setModels] = useState<Model[]>([]);
-  const [capabilities, setCapabilities] = useState<string[]>([]);
+  const [capabilityState, setCapabilityState] = useState<{
+    providerId: string;
+    model: string;
+    values: string[];
+  }>();
+  const capabilities =
+    capabilityState?.providerId === providerId &&
+    capabilityState.model === model
+      ? capabilityState.values
+      : [];
+  const inventoryRequest = useRef<AbortController | null>(null);
   const [health, setHealth] = useState("Not tested");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -136,28 +146,36 @@ export function Workspace() {
     return () => mq.removeEventListener("change", apply);
   }, [settings]);
   const refresh = useCallback(async () => {
+    inventoryRequest.current?.abort();
+    const controller = new AbortController();
+    inventoryRequest.current = controller;
     if (!provider || !provider.enabled) {
       setModels([]);
       setHealth("Disabled");
+      setModel("");
       return;
     }
     setHealth("Connecting");
     setModels([]);
-    setCapabilities([]);
+    setCapabilityState(undefined);
     try {
-      const list = await new ProviderClient(provider).models();
+      const list = await new ProviderClient(provider).models(controller.signal);
+      if (controller.signal.aborted) return;
       setModels(list);
       setModel((old) =>
         list.some((m) => m.id === old) ? old : (list[0]?.id ?? ""),
       );
       setHealth(`Connected · ${list.length} models`);
     } catch (e) {
-      setHealth(String(e));
+      if (!controller.signal.aborted) setHealth(String(e));
     }
   }, [provider]);
   useEffect(() => {
     const timer = setTimeout(() => void refresh(), 0);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      inventoryRequest.current?.abort();
+    };
   }, [refresh]);
   useEffect(() => {
     let current = true;
@@ -166,9 +184,11 @@ export function Workspace() {
         .show(model)
         .then((d) => {
           if (current)
-            setCapabilities(
-              Array.isArray(d.capabilities) ? d.capabilities : [],
-            );
+            setCapabilityState({
+              providerId: provider.id,
+              model,
+              values: Array.isArray(d.capabilities) ? d.capabilities : [],
+            });
         })
         .catch(() => {});
     return () => {

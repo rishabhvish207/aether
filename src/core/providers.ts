@@ -56,6 +56,34 @@ export async function* lines(
     reader.releaseLock();
   }
 }
+/** Assemble complete SSE events before parsing JSON; data fields may span lines. */
+export async function* eventData(
+  body: ReadableStream<Uint8Array>,
+  signal?: AbortSignal,
+): AsyncGenerator<string> {
+  let data: string[] = [];
+  let size = 0;
+  for await (const line of lines(body, signal)) {
+    if (line === "") {
+      if (data.length) yield data.join("\n");
+      data = [];
+      size = 0;
+      continue;
+    }
+    if (line.startsWith(":")) continue;
+    const colon = line.indexOf(":");
+    const field = colon < 0 ? line : line.slice(0, colon);
+    if (field !== "data") continue;
+    let value = colon < 0 ? "" : line.slice(colon + 1);
+    if (value.startsWith(" ")) value = value.slice(1);
+    size += value.length + 1;
+    if (size > 4 * 1024 * 1024)
+      throw new ProviderError("Provider SSE event exceeds safety limit");
+    data.push(value);
+  }
+  // Some compatible servers close without a final blank separator.
+  if (data.length) yield data.join("\n");
+}
 export class ProviderClient {
   constructor(
     public connection: Provider,
@@ -95,28 +123,41 @@ export class ProviderClient {
       );
     return response;
   }
-  async models(): Promise<Model[]> {
+  async models(signal?: AbortSignal): Promise<Model[]> {
     const data = await (
-      await this.request(this.ollama ? "/api/tags" : "/models")
+      await this.request(
+        this.ollama ? "/api/tags" : "/models",
+        undefined,
+        signal,
+      )
     ).json();
     if (this.ollama) {
       if (!Array.isArray(data.models))
         throw new ProviderError("Incompatible response: missing models");
-      return data.models.map(
-        (m: {
-          name: string;
-          size?: number;
-          details?: Record<string, unknown>;
-        }) => ({ id: m.name, size: m.size, details: m.details }),
-      );
+      const models = z
+        .array(
+          z.object({
+            name: z.string().min(1),
+            size: z.number().nonnegative().optional(),
+            details: z.record(z.string(), z.unknown()).optional(),
+          }),
+        )
+        .parse(data.models);
+      return models.map((m) => ({
+        id: m.name,
+        size: m.size,
+        details: m.details,
+      }));
     }
     if (!Array.isArray(data.data))
       throw new ProviderError("Incompatible response: missing model data");
-    return data.data.map((m: { id: string }) => ({ id: m.id }));
+    return z.array(z.object({ id: z.string().min(1) })).parse(data.data);
   }
   async show(model: string): Promise<Record<string, unknown>> {
     return this.ollama
-      ? (await this.request("/api/show", { model })).json()
+      ? modelInfoSchema.parse(
+          await (await this.request("/api/show", { model })).json(),
+        )
       : {
           capabilities: [],
           note: "Server model capability discovery unavailable; image/audio/tools are not assumed.",
@@ -150,12 +191,26 @@ export class ProviderClient {
     if (!this.ollama) throw new Error("Pull unsupported");
     const r = await this.request("/api/pull", { model, stream: true }, signal);
     if (!r.body) throw new Error("Empty pull response");
+    let complete = false;
     for await (const line of lines(r.body, signal)) {
       if (!line.trim()) continue;
-      const d = JSON.parse(line);
-      if (d.error) throw new Error(d.error);
-      yield d as { status: string; completed?: number; total?: number };
+      const d = pullEventSchema.parse(JSON.parse(line));
+      if (d.error) throw new ProviderError(d.error);
+      if (!d.status)
+        throw new ProviderError("Incompatible pull response: missing status");
+      if (
+        d.completed !== undefined &&
+        d.total !== undefined &&
+        d.completed > d.total
+      )
+        throw new ProviderError("Invalid download progress");
+      complete = d.status === "success";
+      yield { status: d.status, completed: d.completed, total: d.total };
     }
+    if (!complete)
+      throw new ProviderError(
+        "Download stream ended before success; reconnect to inspect runtime state",
+      );
   }
   async *chat(
     model: string,
@@ -210,10 +265,11 @@ export class ProviderClient {
       signal,
     );
     if (!response.body) throw new ProviderError("Provider returned no stream");
-    for await (const line of lines(response.body, signal)) {
-      if (!line.trim() || line.startsWith(":")) continue;
-      if (!this.ollama && !line.startsWith("data:")) continue;
-      const raw = this.ollama ? line : line.slice(5).trim();
+    const payloads = this.ollama
+      ? lines(response.body, signal)
+      : eventData(response.body, signal);
+    for await (const raw of payloads) {
+      if (!raw.trim()) continue;
       if (raw === "[DONE]") {
         finished = true;
         break;
@@ -275,4 +331,14 @@ const streamEventSchema = z.object({
   prompt_eval_duration: tokenMetric,
   eval_duration: tokenMetric,
   load_duration: tokenMetric,
+});
+
+const modelInfoSchema = z
+  .object({ capabilities: z.array(z.string()).optional() })
+  .passthrough();
+const pullEventSchema = z.object({
+  status: z.string().optional(),
+  completed: z.number().int().nonnegative().optional(),
+  total: z.number().int().nonnegative().optional(),
+  error: z.string().optional(),
 });

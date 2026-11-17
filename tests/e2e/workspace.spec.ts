@@ -166,3 +166,77 @@ test("renders untrusted Markdown without raw HTML execution or automatic remote 
     fullPage: true,
   });
 });
+
+test("ignores stale inventory when switching providers during a connection request", async ({
+  page,
+}) => {
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  };
+  await page.route("http://127.0.0.1:11435/**", (route) =>
+    route.request().method() === "OPTIONS"
+      ? route.fulfill({ status: 204, headers })
+      : route.fulfill({
+          headers,
+          json:
+            new URL(route.request().url()).pathname === "/api/tags"
+              ? { models: [{ name: "second-model" }] }
+              : { capabilities: ["completion"] },
+        }),
+  );
+  await expect(
+    page.getByRole("combobox", { name: "Model", exact: true }),
+  ).toHaveValue("test-model");
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let finished!: () => void;
+  const handled = new Promise<void>((resolve) => {
+    finished = resolve;
+  });
+  await page.route("http://127.0.0.1:11434/api/tags", async (route) => {
+    await gate;
+    try {
+      await route.fulfill({
+        headers,
+        json: { models: [{ name: "stale-model" }] },
+      });
+    } catch {
+      /* Switching providers cancels the superseded request. */
+    } finally {
+      finished();
+    }
+  });
+  const started = page.waitForRequest("http://127.0.0.1:11434/api/tags");
+  await page.getByRole("button", { name: "Reconnect", exact: true }).click();
+  await started;
+  await navigate(page, "Providers");
+  await page.getByRole("button", { name: "Add connection" }).click();
+  await page
+    .getByRole("textbox", { name: "Label", exact: true })
+    .fill("Second server");
+  await page
+    .getByRole("textbox", { name: /Base URL/ })
+    .fill("http://127.0.0.1:11435");
+  await page.getByRole("button", { name: "Save connection" }).click();
+  await navigate(page, "Chat");
+  await page
+    .getByRole("combobox", { name: "Provider", exact: true })
+    .selectOption({ label: "Second server" });
+  await expect(
+    page.getByRole("combobox", { name: "Model", exact: true }),
+  ).toHaveValue("second-model");
+  release();
+  await handled;
+  await expect(
+    page.getByRole("combobox", { name: "Model", exact: true }),
+  ).toHaveValue("second-model");
+  await expect(
+    page
+      .getByRole("combobox", { name: "Model", exact: true })
+      .getByRole("option", { name: "stale-model" }),
+  ).toHaveCount(0);
+});

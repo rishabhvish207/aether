@@ -37,7 +37,7 @@ Goal: a healthy repository that can be understood and built by a person or anoth
 - [ ] Add README, CLAUDE.md, SRS, roadmap and current project-state document.
 - [ ] Add `.gitignore` for model files, local databases, secrets, caches and build artifacts.
 - [ ] Run install, lint, typecheck, tests and production build.
-- [~] Make the initial baseline commit; SSH identity and empty GitHub origin verified, checks passing; integration in progress.
+- [x] Make the initial baseline commit; `addd8ac` pushed to SSH origin and remote SHA verified. Main tracks origin/main. Automatic verified commits/pushes authorized in AGENTS.md.
 
 Phase 1 — First usable chat slice
 =================================
@@ -213,3 +213,5 @@ Full-scope delivery rule
 ========================
 
 Do not stop when Phase 1 is complete. Continue through every applicable phase and close the associated requirement IDs in `IMPLEMENTATION_TRACKER.md`. A navigation entry must never be shipped as “soon” or as a dead placeholder. When a feature depends on an external service, engine, credential, device or unsupported host platform, implement its real setup/capability/error behavior and record what could not be tested; never fake success. Mark the app complete only when every applicable requirement is verified. The explicitly optional/Future items may remain excluded only with their scope and reason documented.
+
+2026-11-17 provider follow-through: multiline SSE and invalid/truncated management responses handled; cancelled stale provider inventory results; provider/model-scoped capability state. Unit suite 28 passing, browser suite 8 passing; lint/typecheck/static export passed. Continue remaining phases; native system-library blocker persists.
