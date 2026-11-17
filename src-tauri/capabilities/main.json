@@ -1,0 +1,11 @@
+{
+  "identifier": "main",
+  "description": "Local application window; structured storage only. File access is selected through Rust dialogs.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "sql:default",
+    "sql:allow-execute",
+    "sql:allow-select"
+  ]
+}
